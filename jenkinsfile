@@ -12,9 +12,9 @@ pipeline {
         // disableConcurrentBuilds()
         timeout(time:10, unit: 'MINUTES')
     }
-    parameters {
-        // name, type, default value and description
-    }
+    // parameters {
+    //     // name, type, default value and description
+    // }
     stages {
         stage ('Read Package.json Version') {
             // when {
