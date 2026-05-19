@@ -6,7 +6,7 @@ pipeline {
     }
     environment {
         appVersion = ""
-        name = ""
+        appName = ""
     }
     options {
         // disableConcurrentBuilds()
@@ -27,9 +27,9 @@ pipeline {
                     // Load package.json and Parse it
                     def packageJson = readJSON file: 'package.json'
                     
-                    env.appVersion = packageJson.version
-                    env.appName = packageJson.name
-                    echo "Building ${env.appName} version: ${env.appVersion}"
+                    appVersion = packageJson.version
+                    appName = packageJson.name
+                    echo "Building ${appName} version: ${appVersion}"
                 } 
             }
         }
@@ -46,7 +46,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                        docker build -t ${env.appName}:${env.appVersion} .
+                        docker build -t ${appName}:${appVersion} .
                     """
                 }
             }
@@ -56,7 +56,7 @@ pipeline {
     // post build checks 
     post {
         always {
-            echo "Final Post Checks of ${env.appName} Deployment"
+            echo "Final Post Checks of ${appName} Deployment"
         }
         success {
             echo "pipeline success"
