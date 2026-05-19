@@ -33,28 +33,32 @@ pipeline {
                 } 
             }
         }
-        stage ('Test') {
+        stage ('Install Dependencies') {
             steps {
                 script {
                     sh """"
+                        npm install
 
                     """
                 }
             }
         }
-        stage ('Deploy') {
+        stage ('Image Build') {
             steps {
                 script {
                     sh """
+                        docker build -t ${appName}:${appVersion}
 
                     """
                 }
             }
         }
     }
+
+    // post build checks 
     post {
         always {
-            echo "Final Post Checks"
+            echo "Final Post Checks of ${appName} Deployment"
         }
         success {
             echo "pipeline success"
