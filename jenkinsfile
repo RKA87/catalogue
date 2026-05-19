@@ -25,11 +25,11 @@ pipeline {
             steps {
                 script {
                     // Load package.json and Parse it
-                    def packageJson = readJSON file: package.json
+                    def packageJson = readJSON file: 'package.json'
                     
-                    appVersion = packageJson.version
-                    appName = packageJson.name
-                    echo "Building ${appName} version: ${appVersion}"
+                    env.appVersion = packageJson.version
+                    env.appName = packageJson.name
+                    echo "Building ${env.appName} version: ${env.appVersion}"
                 } 
             }
         }
@@ -47,7 +47,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                        docker build -t ${appName}:${appVersion}
+                        docker build -t ${env.appName}:${env.appVersion}
 
                     """
                 }
@@ -58,7 +58,7 @@ pipeline {
     // post build checks 
     post {
         always {
-            echo "Final Post Checks of ${appName} Deployment"
+            echo "Final Post Checks of ${env.appName} Deployment"
         }
         success {
             echo "pipeline success"
