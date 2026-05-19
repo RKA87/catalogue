@@ -1,0 +1,66 @@
+pipeline {
+    agent {
+        node {
+            label 'ROBOSHOP'
+        }
+    }
+    environment {
+        appVersion = ""
+        name = ""
+    }
+    options {
+        // disableConcurrentBuilds()
+        timeout(time:10, unit: 'MINUTES')
+    }
+    parameters {
+        // name, type, default value and description
+    }
+    stages {
+        stage ('Read Package.json Version') {
+            // when {
+            //     expression { 
+            //         "${params.Deploy}" == "true" 
+            //     }
+            // }
+            steps {
+                script {
+                    // Load package.json and Parse it
+                    def packageJson = readJSON file: package.json
+                    
+                    appVersion = packageJson.version
+                    appName = packageJson.name
+                    echo "Building ${appName} version: ${appVersion}"
+                } 
+            }
+        }
+        stage ('Test') {
+            steps {
+                script {
+                    sh """"
+
+                    """
+                }
+            }
+        }
+        stage ('Deploy') {
+            steps {
+                script {
+                    sh """
+
+                    """
+                }
+            }
+        }
+    }
+    post {
+        always {
+            echo "Final Post Checks"
+        }
+        success {
+            echo "pipeline success"
+        }
+        failure {
+            echo "pipeline failure"
+        }
+    }
+}
