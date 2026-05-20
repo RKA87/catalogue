@@ -46,6 +46,7 @@ pipeline {
         stage ('BuildImage') {
             steps {
                 script {
+                    withAWS(credentials: 'aws-credentials', region: "${env.awsReg}") {
                     sh """
                         echo "Image Build Process Initiated"
                     
@@ -56,6 +57,7 @@ pipeline {
                         docker push 381491827632.dkr.ecr.us-east-1.amazonaws.com/roboshop/${env.appName}:${env.appVersion}
 
                     """
+                    }
                 }
             }
         }
