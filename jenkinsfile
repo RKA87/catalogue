@@ -26,9 +26,9 @@ pipeline {
                     // Read the file and parse it into an object
                     def data = readJSON file: 'package.json'
 
-                    env.appName = data.name
-                    env.appVersion = data.version
-                    echo "ApplicationName: ${env.appName} ApplicationVersion: ${env.appVersion}"
+                    appName = data.name
+                    appVersion = data.version
+                    echo "ApplicationName: ${appName} ApplicationVersion: ${appVersion}"
 
                 }
             }
@@ -52,9 +52,9 @@ pipeline {
                     
                         aws ecr get-login-password --region ${env.awsReg} | docker login --username AWS --password-stdin ${env.awsAccId}.dkr.ecr.us-east-1.amazonaws.com
 
-                        docker build -t 381491827632.dkr.ecr.us-east-1.amazonaws.com/roboshop/${env.appName}:${env.appVersion} .
+                        docker build -t 381491827632.dkr.ecr.us-east-1.amazonaws.com/roboshop/${appName}:${appVersion} .
 
-                        docker push 381491827632.dkr.ecr.us-east-1.amazonaws.com/roboshop/${env.appName}:${env.appVersion}
+                        docker push 381491827632.dkr.ecr.us-east-1.amazonaws.com/roboshop/${appName}:${appVersion}
 
                     """
                     }
