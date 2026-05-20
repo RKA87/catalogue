@@ -46,7 +46,7 @@ pipeline {
         stage ('BuildImage') {
             steps {
                 script {
-                    withAWS(credentials: 'aws-credentials', region: "${env.awsReg}") {
+                    withAWS(credentials: 'aws-creds', region: "${env.awsReg}") {
                     sh """
                         echo "Image Build Process Initiated"
                     
