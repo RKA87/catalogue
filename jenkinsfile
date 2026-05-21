@@ -28,7 +28,7 @@ pipeline {
 
                     echo "ApplicationName: ${appName} Application Version:${appVersion}"
 
-                    echo "Application ${appName} with AppVersion ${appVersion} will be deploy in aws account: ${awsAccId} region: ${awsRegion}"
+                    echo "Application ${appName} with AppVersion ${appVersion} will be deploy in aws account: ${env.awsAccId} region: ${env.awsRegion}"
                 }
             }
         }
