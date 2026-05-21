@@ -4,73 +4,43 @@ pipeline {
             label 'roboshop'
         }
     }
-    // Its a env variables to use it all the stages, define it in key & value pairs
     environment {
         appName = ""
         appVersion = ""
         awsAccId = "381491827632"
-        awsReg = "us-east-1"
+        awsRegion = "us-east-1"
     }
-    // Parameters to use it in Jenkins (Build with parameters to give inputs from console if not defined default values) and accessible in all the stages ${params.<para_name>}
     // parameters {
-
+        // its useful in Build with Parameters in Jenkins
     // }
     options {
-        // disableConcurrentBuilds()
-        timeout(time:10, unit:"MINUTES")
+        timeout(time:10, unit:'MINUTES')
     }
-    stages {
+    stages{
         stage ('ReadAppVersion') {
             steps {
                 script {
-                    // Read the file and parse it into an object
+                    // read JSON data from package.json
                     def data = readJSON file: 'package.json'
 
                     appName = data.name
                     appVersion = data.version
-                    echo "ApplicationName: ${appName} ApplicationVersion: ${appVersion}"
 
+                    echo "ApplicationName: ${appName} Application Version:${appVersion}"
+
+                    echo "Application ${appName} with AppVersion ${appVersion} will be deploy in aws account: ${awsAccId} region: ${awsRegion}"
                 }
             }
         }
-        stage ('InstallDependencies') {
-            steps {
-                script {
-                    sh """
-                        npm install
+        // stage ('BuildImage') {
+        //     steps {
+        //         script {
+        //             sh """
 
-                    """
-                }
-            }
-        }
-        stage ('BuildImage') {
-            steps {
-                script {
-                    withAWS(credentials: 'aws-creds', region: "${env.awsReg}") {
-                    sh """
-                        echo "Image Build Process Initiated"
-                    
-                        aws ecr get-login-password --region ${env.awsReg} | docker login --username AWS --password-stdin ${env.awsAccId}.dkr.ecr.us-east-1.amazonaws.com
 
-                        docker build -t 381491827632.dkr.ecr.us-east-1.amazonaws.com/roboshop/${appName}:${appVersion} .
-
-                        docker push 381491827632.dkr.ecr.us-east-1.amazonaws.com/roboshop/${appName}:${appVersion}
-
-                    """
-                    }
-                }
-            }
-        }
-    }
-    post {
-        always {
-            echo "Post Final Checks after Build"
-        }
-        success {
-            echo "Pipeline Success"
-        }
-        failure {
-            echo "pipeline failure"
-        }
+        //             """
+        //         }
+        //     }
+        // }
     }
 }
