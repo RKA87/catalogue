@@ -32,6 +32,17 @@ pipeline {
                 }
             }
         }
+        // stage ('InstallDependencies') {
+        // this wiil be get installed in Jenkins Agent node
+        //     steps {
+        //         script {
+        //             sh """
+        //                 // npm install
+        //                 echo "npm installed in Docker image itself"
+        //             """
+        //         }
+        //     }
+        // }
         stage ('BuildImage') {
             steps {
                 script {
