@@ -48,16 +48,16 @@ pipeline {
                 }
             }
         }
-        post {
-            always {
-                echo "perform final checks always after build"
-            }
-            success {
-                echo "pipeline success"
-            }
-            failure {
-                echo "pipeline failure"
-            }
+    }
+    post {
+        always {
+            echo "perform final checks always after build"
+        }
+        success {
+            echo "pipeline success"
+        }
+        failure {
+            echo "pipeline failure"
         }
     }
 }
