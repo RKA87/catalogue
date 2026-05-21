@@ -43,22 +43,32 @@ pipeline {
         //         }
         //     }
         // }
-        stage ('BuildImage') {
+        stage ('SonarQube Analysis') {
             steps {
                 script {
-                    withAWS(credentials: 'aws-creds', region: "${env.awsRegion}") {
-                    
-                    sh """
-                        aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${awsAccId}.dkr.ecr.us-east-1.amazonaws.com
-
-                        docker build -t roboshop/${appName}:${appVersion} .
-
-                        docker push ${awsAccId}.dkr.ecr.us-east-1.amazonaws.com/roboshop/${appName}:${appVersion}
-                    """
+                    def scannerHome = tool name: 'sonar-8'
+                    withSonarQubeEnv('sonarqube-instance') {
+                        sh "${scannerHome}/bin/sonar-scanner"
                     }
                 }
             }
         }
+        // stage ('BuildImage') {
+        //     steps {
+        //         script {
+        //             withAWS(credentials: 'aws-creds', region: "${env.awsRegion}") {
+                    
+        //             sh """
+        //                 aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${awsAccId}.dkr.ecr.us-east-1.amazonaws.com
+
+        //                 docker build -t roboshop/${appName}:${appVersion} .
+
+        //                 docker push ${awsAccId}.dkr.ecr.us-east-1.amazonaws.com/roboshop/${appName}:${appVersion}
+        //             """
+        //             }
+        //         }
+        //     }
+        // }
     }
     post {
         always {
