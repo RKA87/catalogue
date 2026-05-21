@@ -53,22 +53,32 @@ pipeline {
                 }
             }
         }
-        // stage ('BuildImage') {
-        //     steps {
-        //         script {
-        //             withAWS(credentials: 'aws-creds', region: "${env.awsRegion}") {
-                    
-        //             sh """
-        //                 aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${awsAccId}.dkr.ecr.us-east-1.amazonaws.com
+        stage ('SonarQube QualityGateCheck') {
+            steps {
+                script {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        // waitForQualityGate() will pause the pipeline until a webhook response is received
+                        waitForQualityGate abortPipeline: true
+                    }
+                }
+            }      
+        }
+        stage ('BuildImage') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: "${env.awsRegion}") {
+                        sh """
+                            aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${awsAccId}.dkr.ecr.us-east-1.amazonaws.com
 
-        //                 docker build -t roboshop/${appName}:${appVersion} .
+                            docker build -t roboshop/${appName}:${appVersion} .
 
-        //                 docker push ${awsAccId}.dkr.ecr.us-east-1.amazonaws.com/roboshop/${appName}:${appVersion}
-        //             """
-        //             }
-        //         }
-        //     }
-        // }
+                            docker push ${awsAccId}.dkr.ecr.us-east-1.amazonaws.com/roboshop/${appName}:${appVersion}
+                        """
+                    }
+                }
+            }
+        }
+
     }
     post {
         always {
