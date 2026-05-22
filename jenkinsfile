@@ -5,54 +5,52 @@ pipeline {
         }
     }
     environment {
+        awsAccID = ""
+        awsRegion = "us-east-1"
         appName = ""
         appVersion = ""
-        awsAccId = "381491827632"
-        awsRegion = "us-east-1"
     }
-    options{
+    options {
         // disableConcurrentBuilds()
-        timeout(time:10, unit:'MINUTES')
+        timeout(time:10, unit:"MINUTES")
     }
-    // parameters {
-    //     // This stage will be useful to build with parameters in Jenkins
+    // paramters {
+    // This section is using for Jenkins Build with Parameter section
+
     // }
     stages {
-        stage('ReadAppVersion') {
+        stage ('ReadAppVersion') {
             steps {
                 script {
                     def data = readJSON file: 'package.json'
-
                     appName = data.name
                     appVersion = data.version
 
-                    echo "Application Name: ${appName} and Application Version: ${appVersion}"
+                    echo "Application Name: ${appName} Version: ${appVersion}"
+                    echo "Application is hosted in aws account ${env.awsAccID} region ${env.awsRegion}"
 
-                    echo "Copying the image process into aws account: ${env.awsAccId} region: ${env.awsRegion}"
                 }
             }
         }
-        stage('Sonarqube Analysis') {
-            // tools {
-            //     sonar 'sonar-8'
-            // }
+        stage ('SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool name: 'sonar-8'
+                    def scannerHome = tools name: 'sonar-8'
                     withSonarQubeEnv('sonarqube-instance') {
                         sh """
-                            echo "Performing Sonarqube scanning Analysis"
+                            echo "performing sonarqube analysis"
                             ${scannerHome}/bin/sonar-scanner
 
                         """
                     }
+
                 }
             }
         }
-        stage ('QualityGate Analysis') {
+        stage ('QualityGate Analaysis') {
             steps {
                 script {
-                    timeout(time:5, unit:'MINUTES'){
+                    timeout(time:5, unit:'MINUTES') {
                     waitForQualityGate abortPipeline: true
                     }
                 }
@@ -61,24 +59,26 @@ pipeline {
         stage ('BuildImage') {
             steps {
                 script {
-                    withAWS(credentials: 'aws-creds', region: "${env.awsRegion}"){
+                    withAWS(credentials: 'aws-creds', region: "${env.awsRegion}") {
                         sh """
+                            echo "scans completed image build process initiated"
+
                             aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com
-                            
+
                             docker build -t ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion} .
 
-                            docker push ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion}
+                            docker push  ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion}
 
                         """
                     }
+
                 }
             }
         }
-
     }
     post {
         always {
-            echo "always perform final checks"
+            echo "perform finalchecks always"
         }
         success {
             echo "pipeline success"
