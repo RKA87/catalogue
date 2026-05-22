@@ -10,69 +10,65 @@ pipeline {
         awsAccId = "381491827632"
         awsRegion = "us-east-1"
     }
-    // parameters {
-        // its useful in Build with Parameters in Jenkins
-    // }
-    options {
+    options{
+        // disableConcurrentBuilds()
         timeout(time:10, unit:'MINUTES')
     }
-    stages{
-        stage ('ReadAppVersion') {
+    // parameters {
+    //     // This stage will be useful to build with parameters in Jenkins
+    // }
+    stages {
+        stage('ReadAppVersion') {
             steps {
                 script {
-                    // read JSON data from package.json
                     def data = readJSON file: 'package.json'
 
                     appName = data.name
                     appVersion = data.version
 
-                    echo "ApplicationName: ${appName} Application Version:${appVersion}"
+                    echo "Application Name: ${appName} and Application Version: ${appVersion}"
 
-                    echo "Application ${appName} with AppVersion ${appVersion} will be deploy in aws account: ${env.awsAccId} region: ${env.awsRegion}"
+                    echo "Copying the image process into aws account: ${env.awsAccId} region: ${env.awsRegion}"
                 }
             }
         }
-        // stage ('InstallDependencies') {
-        // this wiil be get installed in Jenkins Agent node
-        //     steps {
-        //         script {
-        //             sh """
-        //                 // npm install
-        //                 echo "npm installed in Docker image itself"
-        //             """
-        //         }
-        //     }
-        // }
-        stage ('SonarQube Analysis') {
+        stage('Sonarqube Analysis') {
+            // tools {
+            //     sonar 'sonar-8'
+            // }
             steps {
                 script {
                     def scannerHome = tool name: 'sonar-8'
                     withSonarQubeEnv('sonarqube-instance') {
-                        sh "${scannerHome}/bin/sonar-scanner"
+                        sh """
+                            echo "Performing Sonarqube scanning Analysis"
+                            ${scannerHome}/bin/sonar-scanner
+
+                        """
                     }
                 }
             }
         }
-        stage ('SonarQube QualityGateCheck') {
+        stage ('QualityGate Analysis') {
             steps {
                 script {
-                    timeout(time: 5, unit: 'MINUTES') {
-                        // waitForQualityGate() will pause the pipeline until a webhook response is received
-                        waitForQualityGate abortPipeline: true
+                    timeout(time:5, unit:'MINUTES'){
+                    waitForQualityGate abortPipeline: true
                     }
                 }
-            }      
+            }
         }
         stage ('BuildImage') {
             steps {
                 script {
-                    withAWS(credentials: 'aws-creds', region: "${env.awsRegion}") {
+                    withAWS(credentials: 'aws-creds', region: "${env.awsRegion}"){
                         sh """
-                            aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${awsAccId}.dkr.ecr.us-east-1.amazonaws.com
+                            aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com
+                            
+                            docker build -t ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion} .
 
-                            docker build -t roboshop/${appName}:${appVersion} .
+                            docker push ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion}
 
-                            docker push ${awsAccId}.dkr.ecr.us-east-1.amazonaws.com/roboshop/${appName}:${appVersion}
                         """
                     }
                 }
@@ -82,7 +78,7 @@ pipeline {
     }
     post {
         always {
-            echo "perform final checks always after build"
+            echo "always perform final checks"
         }
         success {
             echo "pipeline success"
