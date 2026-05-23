@@ -74,14 +74,16 @@ pipeline {
         stage ('Build Image') {
             steps {
                 script {
-                    sh """
-                        aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${env.awsAccID}.dkr.ecr.${env.awsRegion}.amazonaws.com
+                    withAWS(credentials: 'aws-creds', region: "${env.awsRegion}") {
+                        sh """
+                            aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${env.awsAccID}.dkr.ecr.${env.awsRegion}.amazonaws.com
 
-                        docker build -t roboshop/${appName}:${appVersion} .
+                            docker build -t roboshop/${appName}:${appVersion} .
 
-                        docker push ${env.awsAccID}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion} 
+                            docker push ${env.awsAccID}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion} 
 
                     """
+                    }
                 }
             }
         }
