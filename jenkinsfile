@@ -4,82 +4,91 @@ pipeline {
             label 'roboshop'
         }
     }
+    options {
+        disableConcurrentBuilds()
+        timeout(time:10, unit:'MINUTES')
+    }
+    // parameters {
+    //     this section will be useful during build with parameters option to use in Jenkins
+    // }
     environment {
         awsAccID = "381491827632"
         awsRegion = "us-east-1"
         appName = ""
         appVersion = ""
     }
-    options {
-        // disableConcurrentBuilds()
-        timeout(time:10, unit:"MINUTES")
-    }
-    // paramters {
-    // This section is using for Jenkins Build with Parameter section
-
-    // }
     stages {
-        stage ('ReadAppVersion') {
+        stage {
             steps {
                 script {
-                    def data = readJSON file: 'package.json'
+                    def data = readjson file: 'package.json'
+
                     appName = data.name
                     appVersion = data.version
 
                     echo "Application Name: ${appName} Version: ${appVersion}"
-                    echo "Application is hosted in aws account ${env.awsAccID} region ${env.awsRegion}"
-
+                    echo "Application is hosted on AWS Acc: ${env.awsAccID} in ${env.awsRegion} region"
                 }
+                
+            }
+        }
+        stage ('Install Dependencies') {
+            steps {
+                script {
+                    sh """"
+                        echo "npm installation"
+                        npm install
+                                                
+                        """
+                }
+
             }
         }
         stage ('SonarQube Analysis') {
             steps {
                 script {
                     def scannerHome = tool name: 'sonar-8'
-
+                    
                     withSonarQubeEnv('sonarqube-instance') {
                         sh """
-                            echo "performing sonarqube analysis"
+                            echo "Performing Sonarqube Analysis"
                             ${scannerHome}/bin/sonar-scanner
 
                         """
                     }
-
                 }
+                
             }
+
         }
-        stage ('QualityGate Analaysis') {
+        stage ('QualityGate Analysis') {
             steps {
                 script {
                     timeout(time:5, unit:'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                        waitForQualityGate abortPipeline: true
                     }
+
                 }
             }
         }
-        stage ('BuildImage') {
+        stage ('Build Image') {
             steps {
                 script {
-                    withAWS(credentials: 'aws-creds', region: "${env.awsRegion}") {
-                        sh """
-                            echo "scans completed image build process initiated"
+                    sh """
+                        aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${env.awsAccID}.dkr.ecr.${env.awsRegion}.amazonaws.com
 
-                            aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com
+                        docker build -t roboshop/${appName}:${appVersion} .
 
-                            docker build -t ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion} .
+                        docker push ${env.awsAccID}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion} 
 
-                            docker push  ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion}
-
-                        """
-                    }
-
+                    """
                 }
             }
         }
     }
     post {
         always {
-            echo "perform finalchecks always"
+            echo "post final checks"
         }
         success {
             echo "pipeline success"
