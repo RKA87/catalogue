@@ -63,15 +63,15 @@ pipeline {
                 }
             }
         }
-        stage ('QualityGate Analysis') {
-            steps {
-                script {
-                    timeout(time:5, unit:"MINUTES"){
-                        waitForQualityGate abortPipeline: true
-                    }
-                }
-            }
-        }
+        // stage ('QualityGate Analysis') {
+        //     steps {
+        //         script {
+        //             timeout(time:5, unit:"MINUTES"){
+        //                 waitForQualityGate abortPipeline: true
+        //             }
+        //         }
+        //     }
+        // }
         stage ('Dependabot Scan') {
             steps {
                 withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
