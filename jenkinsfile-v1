@@ -1,0 +1,102 @@
+pipeline {
+    agent {
+        node {
+            label 'roboshop'
+        }
+    }
+    options {
+        disableConcurrentBuilds()
+        timeout(time:10, unit:'MINUTES')
+    }
+    // parameters {
+    //     this section will be useful during build with parameters option to use in Jenkins
+    // }
+    environment {
+        awsAccID = "381491827632"
+        awsRegion = "us-east-1"
+        appName = ""
+        appVersion = ""
+    }
+    stages {
+        stage ('ReadApp Version') {
+            steps {
+                script {
+                    def data = readJSON file: 'package.json'
+
+                    appName = data.name
+                    appVersion = data.version
+
+                    echo "Application Name: ${appName} Version: ${appVersion}"
+                    echo "Application is hosted on AWS Acc: ${env.awsAccID} in ${env.awsRegion} region"
+                }
+                
+            }
+        }
+        stage ('Install Dependencies') {
+            steps {
+                script {
+                    sh """
+                        echo "npm installation"
+                        npm install
+                                                
+                        """
+                }
+
+            }
+        }
+        stage ('SonarQube Analysis') {
+            steps {
+                script {
+                    def scannerHome = tool name: 'sonar-8'
+                    
+                    withSonarQubeEnv('sonarqube-instance') {
+                        sh """
+                            echo "Performing Sonarqube Analysis"
+                            ${scannerHome}/bin/sonar-scanner
+
+                        """
+                    }
+                }
+                
+            }
+
+        }
+        stage ('QualityGate Analysis') {
+            steps {
+                script {
+                    timeout(time:5, unit:'MINUTES') {
+                        waitForQualityGate abortPipeline: true
+                    }
+
+                }
+            }
+        }
+        stage ('Build Image') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: "${env.awsRegion}") {
+                        sh """
+                            aws ecr get-login-password --region ${env.awsRegion} | docker login --username AWS --password-stdin ${env.awsAccID}.dkr.ecr.${env.awsRegion}.amazonaws.com
+
+                            docker build -t roboshop/${appName}:${appVersion} .
+
+                            docker push ${env.awsAccID}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion} 
+
+                    """
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            echo "post final checks"
+        }
+        success {
+            echo "pipeline success"
+        }
+        failure {
+            echo "pipeline failure"
+        }
+    }
+}
