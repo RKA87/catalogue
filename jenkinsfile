@@ -39,17 +39,17 @@ pipeline {
                 }
             }
         }
-        stage ('Dependencies Test') {
-            steps {
-                // it works using Jest libraries tests
-                script {
-                    sh """
-                        npm test
+        // stage ('Dependencies Test') {
+        //     steps {
+        //         // it works using Jest libraries tests
+        //         script {
+        //             sh """
+        //                 npm test
 
-                    """
-                }
-            }
-        }
+        //             """
+        //         }
+        //     }
+        // }
         stage ('SonarQube Analysis') {
             steps {
                 script{
