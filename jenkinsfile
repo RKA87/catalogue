@@ -92,7 +92,7 @@ pipeline {
                         def scanResults = readJSON file: scanResultsJSON
                         def markdown_table = "| package | severity | ghsa_id | cve_id | summary | fixed_version |\n|---|---|---|---|\n"
 
-                        if (scanResults.size())>0 {alert ->
+                        if (scanResults.size() > 0) { alert ->
                             def pkg = alert.dependency.package
                             def severity = alert.security_advisory.severity
                             def ghsa_id = alert.security_advisory.ghsa_id
