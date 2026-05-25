@@ -52,13 +52,14 @@ pipeline {
         }
         stage ('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonarqube-instance'){
+                script{
                     def scannerHome = tool name: 'sonar-8'
-
-                    sh """
-                        echo "Performing SonarQube Analysis"
-                        ${scannerHome}/bin/sonar-scanner
-                    """
+                    withSonarQubeEnv('sonarqube-instance'){
+                        sh """
+                            echo "Performing SonarQube Analysis"
+                            ${scannerHome}/bin/sonar-scanner
+                        """
+                    }
                 }
             }
         }
@@ -73,7 +74,7 @@ pipeline {
         }
         stage ('Dependabot Scan') {
             steps {
-                withCredentials([string(credentials: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                     script {
                         def owner = "rkak87"
                         def repo = "${appName}"
@@ -89,19 +90,20 @@ pipeline {
                             returnStdout: true
                         ).trim()
 
-                        def scanResults = readJSON file: scanResultsJSON
-                        def markdown_table = "| package | severity | ghsa_id | cve_id | summary | fixed_version |\n|---|---|---|---|\n"
+                        def scanResults = readJSON text: scanResultsJSON
+                        def markdown_table = "| package | severity | ghsa_id | cve_id | summary |\n|---|---|---|---|\n"
 
-                        if (scanResults.size() > 0) { alert ->
+                        if (scanResults.size() > 0) {
+                            scanResults.each { alert ->
                             def pkg = alert.dependency.package
                             def severity = alert.security_advisory.severity
                             def ghsa_id = alert.security_advisory.ghsa_id
                             def cve_id = alert.security_advisory.cve_id
                             def summary = alert.security_advisory.summary
 
-                            markdown_table += "| ${pkg} | ${severity} | ${ghsa_id} | ${cve_id} | ${summary} | ${fixed_version} |\n|"
-                        
-                        }else {
+                            markdown_table += "| ${pkg} | ${severity} | ${ghsa_id} | ${cve_id} | ${summary} |\n|"
+                            }
+                        } else {
                             markdown_table += "| No open Dependabot alerts found! | | | |\n"
                         }
                         println(markdown_table)
@@ -113,7 +115,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                    docker build -t ${env.awsAccId}.dkr.ecr.us-east-1.amazonaws.com/roboshop/${appName}:${appVersion}
+                    docker build -t ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion} .
 
                     """
                 }
@@ -133,8 +135,8 @@ pipeline {
                                 --quiet \
                                 ${env.awsAccId}.dkr.ecr.${env.awsRegion}.amazonaws.com/roboshop/${appName}:${appVersion}
                     """,
-                    returnStd.out: true
-                    ).trim()
+                    returnStatus: true
+                    )
 
                     if (scanResult !=0) {
                         error "🚨 Trivy found HIGH/MEDIUM misconfigurations in Dockerfile. Pipeline failed."
@@ -155,10 +157,10 @@ pipeline {
                             --format table \
                             Dockerfile
                     """,
-                        returnStd.out: true
-                    ).trim()
+                        returnStatus: true
+                    )
 
-                    if (scanResult !=0) {
+                    if (imageScanResult !=0) {
                         error "🚨 Trivy found HIGH/MEDIUM misconfigurations in Dockerfile. Pipeline failed."
                         } else {
                         echo "✅ No HIGH or MEDIUM Dockerfile misconfigurations found. Pipeline continues."
