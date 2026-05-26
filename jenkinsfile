@@ -1,8 +1,8 @@
 @Library('jenkins-shared-library') _
 
 def configMap = [
-    proj: roboshop
-    component: catalogue
+    proj: "roboshop",
+    component: "catalogue"
 ]
 
 echo "Triggering the library pipeline"
