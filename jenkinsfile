@@ -13,5 +13,5 @@ if (env.BRANCH_NAME.equalsIgnoreCase('main')){
 
 }
 else {
-    testPipeline(configMap)
+    testpipeline(configMap)
 }
