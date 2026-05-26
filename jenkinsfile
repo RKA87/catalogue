@@ -73,6 +73,7 @@ pipeline {
         //     }
         // }
         stage ('Dependabot Scan') {
+            // Library scan tool from Github it scans the libraries from package.json file 
             steps {
                 withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                     script {
@@ -137,7 +138,6 @@ pipeline {
                     """,
                     returnStatus: true
                     )
-
                     if (scanResult !=0) {
                         error "🚨 Trivy found HIGH/MEDIUM misconfigurations in Dockerfile. Pipeline failed."
                         } else {
@@ -159,7 +159,6 @@ pipeline {
                     """,
                         returnStatus: true
                     )
-
                     if (imageScanResult !=0) {
                         error "🚨 Trivy found HIGH/MEDIUM misconfigurations in Dockerfile. Pipeline failed."
                         } else {
